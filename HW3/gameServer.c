@@ -162,12 +162,6 @@ void *handleClientThread(void *arg) {
         pthread_exit(NULL);
     }
 
-    // 연결되었다는 메시지를 보냄
-    pthread_t pid = pthread_self();
-    sprintf(buf, "%c your PID in server thread is %lu.\n", GOOD_CONNECTION, pid);
-    send(thread_fd, buf, strlen(buf), 0);
-    printf("%s: %d client%s connected! (PID: %lu)\n\n", prefix, cur_visit, (cur_visit == 1 ? " is" : "s are"), pid);
-
     // judgeWinnerThread로 메시지를 보낼 messageQueue의 아이디를 설정
     int qid;
     if ((qid = msgget(MESSAGE_QUEUE_KEY, 0666 | IPC_CREAT)) == -1) {
@@ -176,6 +170,12 @@ void *handleClientThread(void *arg) {
         free(arg);
         pthread_exit(NULL);
     }
+     
+    // 연결되었다는 메시지를 보냄
+    pthread_t pid = pthread_self();
+    sprintf(buf, "%c your PID in server thread is %lu.\n", GOOD_CONNECTION, pid);
+    send(thread_fd, buf, strlen(buf), 0);
+    printf("%s: %d client%s connected! (PID: %lu)\n\n", prefix, cur_visit, (cur_visit == 1 ? " is" : "s are"), pid);
 
     int client_input;   // client의 입력을 정수로 저장 (Rock: 0, Scissor: 1, Paper: 2)
     while (1) {
@@ -240,6 +240,7 @@ void *handleClientThread(void *arg) {
 void *judgeWinnerThread(void *arg){
     int socket_fd = *((int*)arg);
     char prefix[] = "judgeWinnerThread";
+    char buf[MAX_TEXT_SIZE];
 
     printf("judge winner thread is running...\n");
 
