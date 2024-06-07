@@ -31,7 +31,7 @@ size_t msg_size = sizeof(message_queue_node) - sizeof(long);
 void *handleClientThread(void *arg);
 
 /** 승자를 판별하는 thread function
- *  @param arg client와 접속을 관리하는 socket의 file descriptor */
+ *  @param arg NULL (아무 의미 없음) */
 void *judgeWinnerThread(void *arg);
 
 /** 두 client의 입력을 통해 승자를 판단하는 배열
@@ -91,15 +91,13 @@ int main(int argc, char *argv[]) {
     }
 
     // 소켓 file descriptor의 주소를 담을 변수 동적할당
-    int *socket_fd_addr = (int*)malloc(sizeof(int));
+    int socket_fd;
 
     // socket() -> 소켓 생성
-    if (((*socket_fd_addr) = socket(PF_INET, SOCK_STREAM, proto_ptr->p_proto)) < 0) {
+    if ((socket_fd = socket(PF_INET, SOCK_STREAM, proto_ptr->p_proto)) < 0) {
         fprintf(stderr, "Socket creation fail.\n");
         exit(1);
     }
-
-    int socket_fd = *socket_fd_addr;
 
     // bind() -> 소켓을 바인딩 해 외부의 연결을 받아들임
     if (bind(socket_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
@@ -116,7 +114,7 @@ int main(int argc, char *argv[]) {
     printf("Server is running...\n");
 
     // 승자를 판정하는 judgeWinnerThread 실행
-    pthread_create(&judge_tid, NULL, judgeWinnerThread, (void*)(socket_fd_addr));
+    pthread_create(&judge_tid, NULL, judgeWinnerThread, NULL);
 
     while (1) {
         printf("SERVER: waiting...\n");
@@ -133,6 +131,8 @@ int main(int argc, char *argv[]) {
         *client_fd = accepted_fd;
         pthread_create(&client_tid, NULL, handleClientThread, (void*)(client_fd));
     }
+
+    close(socket_fd);
 }
 
 void *handleClientThread(void *arg) {
@@ -233,12 +233,11 @@ void *handleClientThread(void *arg) {
         free(arg);
         pthread_exit(NULL);
     }
-
+    
     pthread_exit(NULL);
 }
 
 void *judgeWinnerThread(void *arg){
-    int socket_fd = *((int*)arg);
     char prefix[] = "judgeWinnerThread";
     char buf[MAX_TEXT_SIZE];
 
@@ -285,7 +284,8 @@ void *judgeWinnerThread(void *arg){
 
     // 판정 끝 -> 게임 종료
     printf("%s: judging game result is done.\n\n", prefix);
-    close(socket_fd);
-    free(arg);
-    exit(0);
+    pthread_mutex_lock(&visit_mutex);
+    visit_count -= 2;
+    pthread_mutex_unlock(&visit_mutex);
+    pthread_exit(NULL);
 }
