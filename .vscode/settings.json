@@ -10,6 +10,13 @@
         "socket.h": "c",
         "unistd.h": "c",
         "pthread.h": "c",
-        "gameinfo.h": "c"
-    }
+        "gameinfo.h": "c",
+        "fs.h": "c",
+        "uaccess.h": "c",
+        "kernel.h": "c",
+        "*.tcc": "c",
+        "init.h": "c",
+        "typeinfo": "c"
+    },
+    "C_Cpp.errorSquiggles": "enabled"
 }
